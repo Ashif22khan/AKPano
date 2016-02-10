@@ -22,7 +22,9 @@ class ViewController: UIViewController, PanoViewDelegate {
         panoView.delegate=self;
         panoView.setImages(UIImage(named:"one_ofront.jpg")!, i2: UIImage(named:"one_oright.jpg")!, i3: UIImage(named:"one_oback.jpg")!, i4: UIImage(named:"one_oleft.jpg")!, i5: UIImage(named:"one_oup.jpg")!, i6: UIImage(named:"one_odown.jpg")!)
         
-        let hotspot1:UILabel = UILabel.init(frame:CGRectMake(0, 0, 100, 25))
+        ///Uncomment this section of code to check how to add hotspot 
+        
+        /*let hotspot1:UILabel = UILabel.init(frame:CGRectMake(0, 0, 100, 25))
         hotspot1.backgroundColor=UIColor.clearColor()
         hotspot1.textColor=UIColor.redColor()
         hotspot1.text = "HP1"
@@ -47,9 +49,9 @@ class ViewController: UIViewController, PanoViewDelegate {
         panoView.addHotspot(hotspot3, hAngle: Float(-M_PI_2), vAngle: Float(M_PI_4))
         
         let tapgr:UITapGestureRecognizer = UITapGestureRecognizer.init(target: self, action: Selector("tapped:"))
-        hotspot2.addGestureRecognizer(tapgr)
+        hotspot2.addGestureRecognizer(tapgr)*/
     }
-    func tapped(tapGR:UITapGestureRecognizer){
+    /*func tapped(tapGR:UITapGestureRecognizer){
         print("I was tapped without mercy")
     }
     
@@ -58,7 +60,7 @@ class ViewController: UIViewController, PanoViewDelegate {
         self.view!.hAngle = Float(M_PI_4)
     }
 
-    /*func panoViewDidEndZooming(panoView: PanoView) {
+    func panoViewDidEndZooming(panoView: PanoView) {
         
     }
     func panoViewDidZoom(panoView: PanoView) {

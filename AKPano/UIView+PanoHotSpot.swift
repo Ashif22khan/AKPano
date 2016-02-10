@@ -8,39 +8,39 @@
 import UIKit
 import ObjectiveC
 
-var kUIViewHotSpotPanoViewObjectKey:Character="c"
-var kUIViewHotSpotShouldApplyPerspectiveObjectKey:Character = "c"
-var kUIViewHotSpotHAngleObjectKey:Character = "c"
-var kUIViewHotSpotVAngleObjectKey:Character = "c"
+var kUIViewPanoViewObjectKey:Character="c"
+var kUIViewShouldApplyPerspectiveObjectKey:Character = "c"
+var kUIViewHAngleObjectKey:Character = "c"
+var kUIViewVAngleObjectKey:Character = "c"
 
 
 extension UIView{
     var panoView:PanoView?{
         set{
-            objc_setAssociatedObject(self, &kUIViewHotSpotPanoViewObjectKey, panoView, .OBJC_ASSOCIATION_ASSIGN);
+            objc_setAssociatedObject(self, &kUIViewPanoViewObjectKey, panoView, .OBJC_ASSOCIATION_ASSIGN);
         }
         get{
-            return objc_getAssociatedObject(self, &kUIViewHotSpotPanoViewObjectKey) as! PanoView?
+            return objc_getAssociatedObject(self, &kUIViewPanoViewObjectKey) as! PanoView?
         }
     }
     var shouldApplyPerspective:Bool{
         set{
-            objc_setAssociatedObject(self, &kUIViewHotSpotShouldApplyPerspectiveObjectKey, "\(newValue)", .OBJC_ASSOCIATION_COPY_NONATOMIC);
+            objc_setAssociatedObject(self, &kUIViewShouldApplyPerspectiveObjectKey, "\(newValue)", .OBJC_ASSOCIATION_COPY_NONATOMIC);
         }
         get{
-            if objc_getAssociatedObject(self, &kUIViewHotSpotShouldApplyPerspectiveObjectKey) != nil {
-                return objc_getAssociatedObject(self, &kUIViewHotSpotShouldApplyPerspectiveObjectKey).boolValue
+            if objc_getAssociatedObject(self, &kUIViewShouldApplyPerspectiveObjectKey) != nil {
+                return objc_getAssociatedObject(self, &kUIViewShouldApplyPerspectiveObjectKey).boolValue
             }
             return false
         }
     }
     var hAngle:Float{
         set{
-            objc_setAssociatedObject(self, &kUIViewHotSpotHAngleObjectKey, "\(newValue)", .OBJC_ASSOCIATION_COPY_NONATOMIC);
+            objc_setAssociatedObject(self, &kUIViewHAngleObjectKey, "\(newValue)", .OBJC_ASSOCIATION_COPY_NONATOMIC);
         }
         get{
-            if objc_getAssociatedObject(self, &kUIViewHotSpotHAngleObjectKey) != nil {
-                return objc_getAssociatedObject(self, &kUIViewHotSpotHAngleObjectKey).floatValue
+            if objc_getAssociatedObject(self, &kUIViewHAngleObjectKey) != nil {
+                return objc_getAssociatedObject(self, &kUIViewHAngleObjectKey).floatValue
             }
             return 0.0
         }
@@ -48,11 +48,11 @@ extension UIView{
     
     var vAngle:Float{
         set{
-            objc_setAssociatedObject(self, &kUIViewHotSpotVAngleObjectKey, "\(newValue)", .OBJC_ASSOCIATION_COPY_NONATOMIC);
+            objc_setAssociatedObject(self, &kUIViewVAngleObjectKey, "\(newValue)", .OBJC_ASSOCIATION_COPY_NONATOMIC);
         }
         get{
-            if objc_getAssociatedObject(self, &kUIViewHotSpotVAngleObjectKey) != nil {
-                return objc_getAssociatedObject(self, &kUIViewHotSpotVAngleObjectKey).floatValue
+            if objc_getAssociatedObject(self, &kUIViewVAngleObjectKey) != nil {
+                return objc_getAssociatedObject(self, &kUIViewVAngleObjectKey).floatValue
             }
             return 0.0
         }

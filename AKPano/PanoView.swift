@@ -6,6 +6,8 @@
 
 import UIKit
 import CoreMotion
+
+// MARK: PanoViewDelegate
 @objc protocol PanoViewDelegate{
     optional func panoViewDidPan(panoView:PanoView)
     optional func panoViewDidZoom(panoView:PanoView)
@@ -15,35 +17,118 @@ import CoreMotion
     optional func panoViewDidEndZooming(panoView:PanoView)
 }
 
+// MARK: PanoView
 class PanoView: UIView {
+    
+    // MARK: Properties
+    
     var imageOne:UIImageView?, imageTwo:UIImageView?,
         imageThree:UIImageView?, imageFour:UIImageView?,
         imageFive:UIImageView?, imageSix:UIImageView?
+    
     var _referenceSide:Float=0
     var _previousZoomFactor:Float=0
-    var _hotspots:Array<UIView>?;
-    var _panGestureRecognizer:UIPanGestureRecognizer?;
-    var _pinchGestureRecognizer:UIPinchGestureRecognizer?;
-    //delegate
-    var _delegateDidPan:Bool=true
-    var _delegateDidZoom:Bool=true
-    var _delegateBeginPan:Bool=true
-    var _delegateBeginZoom:Bool=true
-    var _delegateEndPan:Bool=true
-    var _delegateEndZoom:Bool=true
-    
-    var _zoomFactor:Float = 0, _hAngle:Float = 0, _vAngle:Float = 0 // from 0 to 100; default value: 1
     var _leftLimit:Float=0, _rightLimit:Float=0,
-        _upLimit:Float = Float(M_PI_2), _downLimit:Float = Float(M_PI_2) // angle limits
-    var _minZoom:Float=0, _maxZoom:Float=100 // zoom limits; default values: min 0, max 100
-    var _panEnabled:Bool=true
-    var _zoomEnabled:Bool=true
+        _upLimit:Float = Float(M_PI_2), _downLimit:Float = Float(M_PI_2)
+    var _minZoom:Float=0, _maxZoom:Float=100
+    
+    var _hotspots:Array<UIView>?;
+
+    var _zoomFactor:Float = 0
+    var zoomFactor:Float{
+        set{
+            var val = newValue
+            let minFactor=(_minZoom * 3.5 / 100.0) + 0.5;
+            let maxFactor=(_maxZoom * 3.5 / 100.0) + 0.5;
+            if (newValue > maxFactor) {
+                val = maxFactor;
+            }else if (newValue<minFactor) {
+                val = minFactor;
+            }
+            _zoomFactor = val * _referenceSide;
+            self.render()
+        }
+        get{
+            return _zoomFactor/_referenceSide;
+        }
+    }
+    
+    var _hAngle:Float = 0
+    override var hAngle:Float{
+        set{
+            _hAngle = newValue
+            self.render()
+        }
+        get{
+            return _hAngle
+        }
+    }
+    
+    var _vAngle:Float = 0
+    override var vAngle:Float{
+        set{
+            _vAngle = newValue
+            self.render()
+        }
+        get{
+            return _vAngle
+        }
+    }
+    
     var _delegate:PanoViewDelegate?
+    var delegate:PanoViewDelegate?{
+        set{
+            _delegate = newValue
+        }
+        get{
+            return _delegate
+        }
+    }
     
-    var _enableGyroMotion:Bool=false
-    var _motionManager:CMMotionManager?
+    var _panEnabled:Bool=true
+    var panEnabled:Bool{
+        set{
+            _panGestureRecognizer!.enabled = newValue
+            self.render()
+        }
+        get{
+            return _panGestureRecognizer!.enabled
+        }
+    }
+    
+    var _zoomEnabled:Bool=true
+    var zoomEnabled:Bool{
+        set{
+            _pinchGestureRecognizer!.enabled = newValue
+            self.render()
+        }
+        get{
+            return _pinchGestureRecognizer!.enabled
+        }
+    }
+    
+    var _pinchGestureRecognizer:UIPinchGestureRecognizer?;
+    var pinchGestureRecognizer:UIPinchGestureRecognizer{
+        set{
+            _pinchGestureRecognizer = newValue
+        }
+        get{
+            return _pinchGestureRecognizer!
+        }
+    }
+    
+    var _panGestureRecognizer:UIPanGestureRecognizer?;
+    var panGestureRecognizer:UIPanGestureRecognizer{
+        set{
+            _panGestureRecognizer = newValue
+        }
+        get{
+            return _panGestureRecognizer!
+        }
+    }
+    
+    // MARK: Gyroscopic updates
     var _gyroUpdateFreequency:NSTimeInterval = 0.03
-    
     var gyroUpdateFreequency:NSTimeInterval{
         set{
             _gyroUpdateFreequency = newValue
@@ -54,6 +139,8 @@ class PanoView: UIView {
         }
     }
     
+    var _motionManager:CMMotionManager?
+    var _enableGyroMotion:Bool=false
     var enableGyroUpdates:Bool{
         set{
             _enableGyroMotion = newValue
@@ -62,7 +149,7 @@ class PanoView: UIView {
                 _motionManager!.accelerometerUpdateInterval = gyroUpdateFreequency
                 _motionManager!.startGyroUpdatesToQueue(NSOperationQueue.mainQueue(),
                     withHandler:{(gyroData:CMGyroData?, error:NSError?)->Void in
-                    self.doGyroUpdate()
+                        self.doGyroUpdate()
                 })
             }else{
                 _motionManager?.stopGyroUpdates()
@@ -79,7 +166,7 @@ class PanoView: UIView {
         let y:Float = Float((_motionManager?.gyroData!.rotationRate.y)!)
         var newHAngle:Float = self.hAngle+(x/(_zoomFactor/10));
         var newVAngle:Float = self.vAngle+(y/(_zoomFactor/10));
-    
+        
         if newHAngle > 0.0 && _rightLimit != 0.0 {
             if newHAngle > _rightLimit {
                 newHAngle = _rightLimit;
@@ -102,96 +189,16 @@ class PanoView: UIView {
         _vAngle = newVAngle
         self.render()
     }
-
     
-    var zoomFactor:Float{
-        set{
-            var val = newValue
-            let minFactor=(_minZoom * 3.5 / 100.0) + 0.5;
-            let maxFactor=(_maxZoom * 3.5 / 100.0) + 0.5;
-            if (newValue > maxFactor) {
-                val = maxFactor;
-            }else if (newValue<minFactor) {
-                val = minFactor;
-            }
-            _zoomFactor = val * _referenceSide;
-            self.render()
-        }
-        get{
-            return _zoomFactor/_referenceSide;
-        }
+    // MARK: Initializers
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        self.defaultValues()
     }
     
-    override var hAngle:Float{
-        set{
-            _hAngle = newValue
-            self.render()
-        }
-        get{
-            return _hAngle
-        }
-    }
-    
-    override var vAngle:Float{
-        set{
-            _vAngle = newValue
-            self.render()
-        }
-        get{
-            return _vAngle
-        }
-    }
-    
-    var delegate:PanoViewDelegate?{
-        set{
-            _delegate = newValue
-            _delegateDidPan = (_delegate!.panoViewDidPan != nil)
-            _delegateDidZoom = (_delegate!.panoViewDidZoom != nil)
-            _delegateBeginPan = (_delegate!.panoViewWillBeginPanning != nil)
-            _delegateBeginZoom = (_delegate!.panoViewWillBeginZooming != nil)
-            _delegateEndPan = (_delegate!.panoViewDidEndPanning != nil)
-            _delegateEndZoom = (_delegate!.panoViewDidEndZooming != nil)
-        }
-        get{
-            return _delegate
-        }
-    }
-    
-    var panEnabled:Bool{
-        set{
-            _panGestureRecognizer!.enabled = newValue
-            self.render()
-        }
-        get{
-            return _panGestureRecognizer!.enabled
-        }
-    }
-    
-    var zoomEnabled:Bool{
-        set{
-            _pinchGestureRecognizer!.enabled = newValue
-            self.render()
-        }
-        get{
-            return _pinchGestureRecognizer!.enabled
-        }
-    }
-    
-    var pinchGestureRecognizer:UIPinchGestureRecognizer{
-        set{
-            _pinchGestureRecognizer = newValue
-        }
-        get{
-            return _pinchGestureRecognizer!
-        }
-    }
-    var panGestureRecognizer:UIPanGestureRecognizer{
-        set{
-            _panGestureRecognizer = newValue
-        }
-        get{
-            return _panGestureRecognizer!
-        }
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+        self.defaultValues()
     }
     
     func defaultValues(){
@@ -202,7 +209,7 @@ class PanoView: UIView {
             _referenceSide = Float(self.bounds.size.height) / 2;
         }
         let rect:CGRect = CGRectMake(0, 0, CGFloat(_referenceSide*2), CGFloat(_referenceSide*2))
-    
+        
         // Initialization code.
         self.imageOne=UIImageView(frame: rect)
         self.imageTwo=UIImageView(frame: rect)
@@ -250,14 +257,7 @@ class PanoView: UIView {
         self.addGestureRecognizer(pinchGR)
         self.pinchGestureRecognizer=pinchGR;
     }
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        self.defaultValues()
-    }
-    required init?(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder)
-        self.defaultValues()
-    }
+    
     func setImages(i1:UIImage, i2:UIImage, i3:UIImage, i4:UIImage, i5:UIImage, i6:UIImage){
         self.imageOne?.image=i1;
         self.imageTwo?.image=i2;
@@ -266,6 +266,7 @@ class PanoView: UIView {
         self.imageFive?.image=i5;
         self.imageSix?.image=i6;
     }
+    
     override func layoutSubviews(){
         let tempZoomFactor:Float=self.zoomFactor
         if (self.bounds.size.width>self.bounds.size.height) {
@@ -296,7 +297,7 @@ class PanoView: UIView {
         self.render()
     }
 
-    
+    // MARK: Rendering
     func render(){
         var transform3D:CATransform3D = CATransform3DIdentity
         
@@ -403,8 +404,10 @@ class PanoView: UIView {
         }
     }
     
+    // MARK: Gesture recognizer start
+    
     func didPan(gestureRecognizer:UIPanGestureRecognizer ){
-        if gestureRecognizer.state == .Began && _delegateBeginPan{
+        if gestureRecognizer.state == .Began && _delegate!.panoViewWillBeginPanning != nil{
             _delegate?.panoViewWillBeginPanning!(self)
         }
         if gestureRecognizer.state == .Began ||
@@ -436,11 +439,11 @@ class PanoView: UIView {
             _vAngle = newVAngle
             self.render()
             gestureRecognizer.setTranslation(CGPointZero, inView:self)
-            if _delegateDidPan {
+            if _delegate!.panoViewDidPan != nil {
                 _delegate?.panoViewDidPan!(self)
             }
         }
-        if gestureRecognizer.state == .Ended && _delegateEndPan{
+        if gestureRecognizer.state == .Ended && _delegate!.panoViewDidEndPanning != nil{
             _delegate?.panoViewDidEndPanning!(self)
         }
     }
@@ -448,7 +451,7 @@ class PanoView: UIView {
     func didPinch(gestureRecognizer:UIPinchGestureRecognizer){
         if gestureRecognizer.state == .Began{
             _previousZoomFactor = self.zoomFactor
-            if _delegateBeginZoom {
+            if _delegate!.panoViewWillBeginZooming != nil {
                 _delegate?.panoViewWillBeginZooming!(self)
             }
         }
@@ -456,14 +459,17 @@ class PanoView: UIView {
             gestureRecognizer.state == .Changed {
             let newFactor = _previousZoomFactor * Float(gestureRecognizer.scale);
             self.zoomFactor = newFactor;
-            if _delegateDidZoom {
+            if _delegate!.panoViewDidZoom != nil {
                 _delegate?.panoViewDidZoom!(self)
             }
         }
-        if gestureRecognizer.state == .Ended && _delegateEndZoom{
+        if gestureRecognizer.state == .Ended && _delegate!.panoViewDidEndZooming != nil{
             _delegate?.panoViewDidEndZooming!(self)
         }
     }
+    // MARK: Gesture recognizer end
+    
+    // MARK: Hotspot handlers start
     func addHotspot(hotspotView:UIView, hAngle:Float, vAngle:Float){
         hotspotView.removeFromPanoView()
         hotspotView.panoView = self
@@ -480,4 +486,5 @@ class PanoView: UIView {
             hotspot.panoView=nil;
         }
     }
+    // MARK: Hotspot handlers end
 }
